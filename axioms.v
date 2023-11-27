@@ -2,23 +2,20 @@
 
 (* TODO: figure out point/line/plane equivalence since there are no objects *)
 
-Inductive Point : Type :=
-.
+Parameter Point : Set.
 
-Inductive Line : Type :=
-.
+Parameter Line : Set.
 
-Inductive Plane : Type :=
-.
+Parameter Plane : Set.
 
-Inductive LiesOnPL : Point -> Line -> Prop :=
-.
+Parameter LiesOnPL : Point -> Line -> Prop.
 
-Inductive LiesOnPp : Point -> Plane -> Prop :=
-.
+Parameter LiesOnPp : Point -> Plane -> Prop.
 
-Inductive LiesOnLp : Line -> Plane -> Prop :=
-.
+Parameter LiesOnLp : Line -> Plane -> Prop.
+
+Axiom LiesOnPL_and_LiesOnLp_implies_LiesOnPp : forall (A : Point) (L : Line) (p : Plane),
+  LiesOnPL A L -> LiesOnLp L p -> LiesOnPp A p.
 
 Definition distinct3 (A B C : Point) : Prop :=
   A <> B /\ B <> C /\ C <> A.
@@ -74,9 +71,11 @@ Axiom four_points_on_plane : forall (p : Plane),
   LiesOnPp A p /\ LiesOnPp B p /\ LiesOnPp C p /\ LiesOnPp D p.
 
 (* II Order *)
+Parameter Between : Point -> Point -> Point -> Prop.
+
 (* II1 *)
-Inductive Between : Point -> Point -> Point -> Prop :=
-| between_rev (A B C : Point) : Between A B C -> Between C B A.
+Axiom between_rev : forall (A B C : Point),
+  Between A B C -> Between C B A.
 
 Axiom between_line : forall (A B C : Point),
   Between A B C ->
@@ -103,12 +102,17 @@ Axiom pasch : forall (A B C : Point) (L : Line) (p : Plane),
 
 (* III Congruence *)
 (* Congruence for line segments *)
-Inductive CongruentLS : Point -> Point -> Point -> Point -> Prop :=
-| congruentls_refl (A B : Point) : CongruentLS A B A B
-| congruentls_equiv (A B A' B' : Point) : CongruentLS A B A' B' -> CongruentLS A' B' A B
+Parameter CongruentLS : Point -> Point -> Point -> Point -> Prop.
+
+Axiom congruentls_refl : forall (A B : Point),
+  CongruentLS A B A B.
+
+Axiom congruentls_equiv : forall (A B A' B' : Point),
+  CongruentLS A B A' B' -> CongruentLS A' B' A B.
+
 (* III2 *)
-| congruentls_trans (A B A' B' A'' B'' : Point) : CongruentLS A B A' B' -> CongruentLS A B A'' B'' -> CongruentLS A' B' A'' B''
-.
+Axiom congruentls_trans : forall (A B A' B' A'' B'' : Point),
+  CongruentLS A B A' B' -> CongruentLS A B A'' B'' -> CongruentLS A' B' A'' B''.
 
 (* III1 *)
 Axiom exists_congruent_line_segment : forall (A B A' Side : Point) (L : Line),
@@ -129,12 +133,61 @@ Axiom adding_congruent_line_segments : forall (A B C A' B' C' : Point),
   CongruentLS A C A' C'.
 
 (* Congruence for angles *)
-Inductive CongruentA : Point -> Point -> Point -> Point -> Point -> Point -> Prop :=
-| congruenta_refl (A B C : Point) : CongruentA A B C A B C
-| congruenta_equiv (A B C A' B' C' : Point) : CongruentA A B C A' B' C' -> CongruentA A' B' C' A B C
-| congruenta_flip (A B C : Point) : CongruentA A B C C B A
+Parameter CongruentA : Point -> Point -> Point -> Point -> Point -> Point -> Prop.
+
+Axiom congruenta_refl : forall (A B C : Point),
+  CongruentA A B C A B C.
+
+Axiom congruenta_equiv : forall (A B C A' B' C' : Point),
+  CongruentA A B C A' B' C' -> CongruentA A' B' C' A B C.
+
+Axiom congruenta_flip : forall (A B C : Point),
+  CongruentA A B C C B A.
+
 (* III5 *)
-| congruenta_trans (A B C A' B' C' A'' B'' C'' : Point) : CongruentA A B C A' B' C' -> CongruentA A B C A'' B'' C'' -> CongruentA A' B' C' A'' B'' C''
+Axiom congruenta_trans : forall (A B C A' B' C' A'' B'' C'' : Point),
+  CongruentA A B C A' B' C' -> CongruentA A B C A'' B'' C'' -> CongruentA A' B' C' A'' B'' C''.
+
+(* III4 TODO: do we need these 180 degree angle specs? *)
+(* Says that all interior points of an angle are on the C side of A-Origin *)
+Definition interior_points_same_side (A Origin C : Point) : Prop :=
+  (* Can't be a 180 angle *)
+  (~ exists L, LiesOnPL A L /\ LiesOnPL Origin L /\ LiesOnPL C L) ->
+  distinct3 A Origin C ->
+  forall P,
+  exists L', LiesOnPL P L' /\ LiesOnPL Origin L' ->
+  (exists B, LiesOnPL B L' /\ Between A B C /\ (Between Origin B P \/ Between Origin P B)) ->
+  (forall AO, LiesOnPL A AO /\ LiesOnPL Origin AO -> (~ exists M, Between P M C /\ LiesOnPL M AO))
 .
 
-(* III4 *)
+(* TODO: is exists! enough for uniqueness or should I add another axiom? *)
+(* Kind of weird, but basically Side is a point on the side of the line A-Origin that we want our angle to be on *)
+Axiom exists_congruent_angle : forall (A B C Origin H Side : Point) (p : Plane),
+  distinct3 A B C ->
+  (* Can't be a 180 angle, otherwise sides don't work *)
+  (~ exists L, LiesOnPL A L /\ LiesOnPL B L /\ LiesOnPL C L) ->
+  Origin <> H ->
+  LiesOnPp A p -> LiesOnPp B p -> LiesOnPp C p -> LiesOnPp Origin p -> LiesOnPp H p ->
+  exists! K, CongruentA A B C H Origin K /\ LiesOnPp K p /\ (forall AO, LiesOnPL A AO /\ LiesOnPL Origin AO -> (~ exists M, Between K M Side /\ LiesOnPL M AO)) /\ interior_points_same_side H Origin C.
+  
+(* III6 *)
+Axiom congruent_angles_of_triangles : forall (A B C A' B' C' : Point),
+  distinct3 A B C -> (~ exists L, LiesOnPL A L /\ LiesOnPL B L /\ LiesOnPL C L) ->
+  distinct3 A' B' C' -> (~ exists L, LiesOnPL A' L /\ LiesOnPL B' L /\ LiesOnPL C' L) ->
+  CongruentLS A B A' B' -> CongruentLS A C A' C' -> CongruentA B A C B' A' C' ->
+  CongruentA A B C A' B' C'.
+
+(* IV Parallels*)
+Definition intersect (L1 L2 : Line) : Prop :=
+  exists P, LiesOnPL P L1 /\ LiesOnPL P L2.
+
+(* IV1 *)
+Axiom euclids_axiom : forall (A : Point) (L : Line) (p : Plane),
+  LiesOnLp L p -> LiesOnPp A p -> ~ LiesOnPL A L ->
+  exists! L', LiesOnPL A L' /\ (~ intersect L L').
+
+(* V Continuity *)
+(* TODO: Determine if these are necessary for my purposes, I think these are only there to put his axioms in in relation to the reals.*)
+(* V1 TODO *)
+
+(* V2 TODO *)
