@@ -14,9 +14,6 @@ Parameter LiesOnPp : Point -> Plane -> Prop.
 
 Parameter LiesOnLp : Line -> Plane -> Prop.
 
-Axiom LiesOnPL_and_LiesOnLp_implies_LiesOnPp : forall (A : Point) (L : Line) (p : Plane),
-  LiesOnPL A L -> LiesOnLp L p -> LiesOnPp A p.
-
 Definition distinct3 (A B C : Point) : Prop :=
   A <> B /\ B <> C /\ C <> A.
 
