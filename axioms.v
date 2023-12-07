@@ -1,7 +1,5 @@
 (* Hilbert's Axioms, based off of https://en.wikipedia.org/wiki/Hilbert%27s_axioms *)
 
-(* TODO: figure out point/line/plane equivalence since there are no objects *)
-
 Parameter Point : Set.
 
 Parameter Line : Set.
@@ -17,14 +15,18 @@ Parameter LiesOnLp : Line -> Plane -> Prop.
 Definition distinct3 (A B C : Point) : Prop :=
   A <> B /\ B <> C /\ C <> A.
 
+(* I will be using this to make my life easier *)
+Axiom excluded_middle : forall (P : Prop),
+  P \/ ~P.
+
 (* I Incidence *)
 (* I1 *)
 Axiom exists_line : forall (A B : Point),
   A <> B -> exists L, LiesOnPL A L /\ LiesOnPL B L.
 
 (* I2 TODO: instead of = maybe use an equivalence relation?? *)
-Axiom equivalent_line : forall (A B C : Point) (L M : Line),
-  B <> C -> LiesOnPL A L -> LiesOnPL B L -> LiesOnPL A M -> LiesOnPL C M -> L = M.
+Axiom equivalent_line : forall (A B : Point) (L M : Line),
+  A <> B -> LiesOnPL A L -> LiesOnPL B L -> LiesOnPL A M -> LiesOnPL B M -> L = M.
 
 (* I3 *)
 Axiom two_points_on_line : forall (L : Line),
@@ -183,8 +185,8 @@ Axiom euclids_axiom : forall (A : Point) (L : Line) (p : Plane),
   LiesOnLp L p -> LiesOnPp A p -> ~ LiesOnPL A L ->
   exists! L', LiesOnPL A L' /\ (~ intersect L L').
 
+(* TODO: Definitely useful for certain proofs, but hard to implement and use because of their second-order logical properties. *)
 (* V Continuity *)
-(* TODO: Determine if these are necessary for my purposes, I think these are only there to put his axioms in in relation to the reals.*)
 (* V1 TODO *)
 
 (* V2 TODO *)
