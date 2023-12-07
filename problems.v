@@ -19,11 +19,11 @@ Axiom mplane_line : forall (L : Line),
 (* Two distinct lines intersect at only one point *)
 Theorem unique_intersection : forall (L1 L2 : Line) (P1 P2 : Point),
   P1 <> P2 ->
-  LiesOnPL P1 L1 /\ LiesOnPL P1 L2 ->
-  LiesOnPL P2 L1 /\ LiesOnPL P2 L2 ->
+  LiesOnPL P1 L1 -> LiesOnPL P1 L2 ->
+  LiesOnPL P2 L1 -> LiesOnPL P2 L2 ->
   L1 = L2.
 Proof.
-  intros L1 L2 P1 P2 Hneq [H11 H12] [H21 H22].
+  intros L1 L2 P1 P2 Hneq H11 H12 H21 H22.
   specialize (equivalent_line P2 P1 L1 L2) as Heq.
   apply Heq; auto.
 Qed.
@@ -36,6 +36,17 @@ Proof.
   intros.
   destruct (excluded_middle (L1 = L2)).
   - rewrite <- H1 in H0. contradiction.
+  - assumption.
+Qed.
+
+Lemma points_not_equivalent : forall (P1 P2 : Point) (L : Line),
+  LiesOnPL P1 L ->
+  ~LiesOnPL P2 L ->
+  P1 <> P2.
+Proof.
+  intros.
+  destruct (excluded_middle (P1 = P2)).
+  - subst. contradiction.
   - assumption.
 Qed.
 
@@ -52,6 +63,25 @@ Proof.
     * exists B. auto.
   - exists A. auto.
 Qed.
+
+Lemma no_line_connects : forall (A B C : Point) (L : Line),
+  A <> B ->
+  LiesOnPL A L ->
+  LiesOnPL B L ->
+  ~LiesOnPL C L ->
+  ~ exists L', LiesOnPL A L' /\ LiesOnPL B L' /\ LiesOnPL C L'.
+Proof.
+  intros A B C L HD HA HB HNC.
+  unfold not. intros.
+  destruct H as [L' [HAL' [HBL' HCL']]].
+  assert (L = L').
+  { 
+    specialize (equivalent_line A B L L') as HLL.
+    apply HLL in HD; auto.
+  }
+  subst. contradiction.
+Qed.
+
 
 (* Defining this equivalence relation for proving plane separation *)
 Definition same_side (A B : Point) (L : Line) : Prop :=
@@ -73,6 +103,34 @@ Proof.
   - right. unfold not in *.
     intros. destruct H. apply H2.
     exists x. destruct H. apply between_rev in H0. split; assumption.
+Qed.
+
+(* Copied out the case here to make it more usable, proof is not that readable *)
+Lemma same_side_transitive_case1 : forall (A B C : Point) (L : Line),
+  (~exists L', LiesOnPL A L' /\ LiesOnPL B L' /\ LiesOnPL C L') ->
+  distinct3 A B C ->
+  ~ LiesOnPL A L ->
+  ~ LiesOnPL B L ->
+  ~ LiesOnPL C L ->
+  same_side A B L ->
+  same_side B C L ->
+  same_side A C L.
+Proof.
+  intros.
+  destruct (excluded_middle (same_side A C L)).
+  * assumption.
+  * specialize (pasch A C B L MPlane) as Hpasch. 
+    unfold same_side in H6. destruct H6. right. unfold not. intros.
+    unfold distinct3 in *. assert (A <> C /\ C <> B /\ B <> A) as HD2. { intuition. } apply Hpasch in HD2; auto.
+    + destruct HD2.
+      -- unfold same_side in H5. destruct H5.
+        ** intuition.
+        ** apply H5. destruct H7. exists x. destruct H7. apply between_rev in H8. split; assumption.
+      -- unfold same_side in H4. destruct H4.
+        ** intuition.
+        ** apply H4. destruct H7. exists x. destruct H7. split; assumption.
+    + unfold not. intros. apply H. destruct H7. exists x. intuition.
+    + apply (mplane_line L). 
 Qed.
 
 Theorem same_side_transitive : forall (A B C : Point) (L : Line),
@@ -124,24 +182,75 @@ Proof.
         - intuition.
         - intuition.
       }
-      subst. admit.
-      (* find contradiction showing that L is the same as AD, using equivalent_line an P D*)
-    } admit.
-  - destruct (excluded_middle (same_side A C L)).
-    * assumption.
-    * specialize (pasch A C B L MPlane) as Hpasch. 
-      unfold same_side in H0. destruct H0. right. unfold not. intros.
-      unfold distinct3 in *. assert (A <> C /\ C <> B /\ B <> A) as HD2. { intuition. } apply Hpasch in HD2; auto.
-      + destruct HD2.
-        -- unfold same_side in HBC. destruct HBC.
-           ** intuition.
-           ** apply H2. destruct H1. exists x. destruct H1. apply between_rev in H3. split; assumption.
-        -- unfold same_side in HAB. destruct HAB.
-           ** intuition.
-           ** apply H2. destruct H1. exists x. destruct H1. split; assumption.
-      + unfold not. intros. apply H. destruct H1. exists x. intuition.
-      + apply (mplane_line L).
-Admitted.
+      subst.
+      specialize (equivalent_line P D L AD) as HeqLAD.
+      assert (P <> D).
+      {
+        destruct (excluded_middle (P = D)).
+        - subst. apply between_rev in HPbtwn. destruct Hnbtw. contradiction.
+        - assumption. 
+      }
+      apply HeqLAD in H; auto.
+      * subst. contradiction.
+      * destruct HPD. assumption.
+      * destruct HSL. destruct H1. assumption.
+    }
+    assert (~LiesOnPL E I).
+    {
+      destruct (excluded_middle (LiesOnPL E I)).
+      - specialize (unique_intersection I AD A E) as Hunq.
+        unfold distinct3 in HDAED.
+        destruct HDAED. destruct H2. apply Hunq in H2; auto. subst. destruct HPD. contradiction.
+      - assumption.
+    }
+    assert (~LiesOnPL E L) as HEnL.
+    {
+      destruct (excluded_middle (LiesOnPL E L)).
+      - assert (L = AD).
+        {
+          apply (unique_intersection L AD D E); auto.
+          - unfold distinct3 in HDAED. intuition.
+          - intuition.
+        }
+        subst. contradiction.
+      - assumption.
+    }
+    assert (same_side E B L) as HEB.
+    {
+      specialize (no_line_connects A B E I) as HNLC.
+      unfold distinct3 in HD. destruct HD. apply HNLC in H1 as HN; auto.
+      apply (same_side_transitive_case1 E A B L); auto.
+      - unfold not. intros. apply HN. destruct H3. exists x. destruct H3. destruct H4. split; auto.
+      - unfold distinct3 in *. split.
+        * intuition.
+        * split.
+          + assumption.
+          + apply (points_not_equivalent B E I); auto.
+    }
+    assert (same_side E C L) as HEC.
+    {
+      specialize (no_line_connects B C E I) as HNLC.
+      unfold distinct3 in HD. destruct HD. destruct H2. apply HNLC in H2 as HN; auto.
+      apply (same_side_transitive_case1 E B C L); auto.
+      - unfold not. intros. apply HN. destruct H4. exists x. intuition.
+      - unfold distinct3 in *. split.
+        * specialize (points_not_equivalent B E I); auto.
+        * split.
+          + intuition.
+          + apply (points_not_equivalent C E I); auto.
+    }
+    specialize (no_line_connects A C E I) as HNLC.
+    unfold distinct3 in HD. destruct HD. destruct H2. apply not_eq_sym in H3. apply HNLC in H3 as HN; auto.
+    apply (same_side_transitive_case1 A E C L); auto.
+    * unfold not. intros. apply HN. destruct H4. exists x. intuition.
+    * unfold distinct3 in *. split.
+      + intuition.
+      + split.
+        -- specialize (points_not_equivalent C E I); auto.
+        -- intuition.
+    * apply same_side_symmetric in H. assumption.
+  - apply (same_side_transitive_case1 A B C L); auto.
+Qed.
 
 (* Shows that there are only two equivalence classes for this relation, so line divides plane into two sides *)
 Theorem plane_separation : forall (A B C : Point) (L : Line),
@@ -151,6 +260,8 @@ Theorem plane_separation : forall (A B C : Point) (L : Line),
   ~ same_side A C L ->
   ~ same_side B C L ->
   same_side A B L.
+Proof.
+  Admitted.
 
 
 End Flat.
