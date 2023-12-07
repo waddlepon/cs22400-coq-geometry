@@ -28,7 +28,7 @@ Proof.
   apply Heq; auto.
 Qed.
 
-Theorem lines_not_equivalent : forall (L1 L2 : Line) (P : Point),
+Lemma lines_not_equivalent : forall (L1 L2 : Line) (P : Point),
   LiesOnPL P L1 ->
   ~ LiesOnPL P L2 -> 
   L1 <> L2.
@@ -39,7 +39,7 @@ Proof.
   - assumption.
 Qed.
 
-Theorem neq_lines_exists_point : forall (L1 L2 : Line),
+Lemma neq_lines_exists_point : forall (L1 L2 : Line),
   L1 <> L2 ->
   exists P, LiesOnPL P L1 /\ ~ LiesOnPL P L2.
 Proof.
@@ -124,9 +124,9 @@ Proof.
         - intuition.
         - intuition.
       }
-      subst.
+      subst. admit.
       (* find contradiction showing that L is the same as AD, using equivalent_line an P D*)
-     }
+    } admit.
   - destruct (excluded_middle (same_side A C L)).
     * assumption.
     * specialize (pasch A C B L MPlane) as Hpasch. 
@@ -143,10 +143,14 @@ Proof.
       + apply (mplane_line L).
 Admitted.
 
-Theorem plane_separation : forall (A B : Point) (L : Line),
+(* Shows that there are only two equivalence classes for this relation, so line divides plane into two sides *)
+Theorem plane_separation : forall (A B C : Point) (L : Line),
   ~ LiesOnPL A L ->
   ~ LiesOnPL B L ->
-  same_side A B L \/ ~ same_side A B L.
+  ~ LiesOnPL C L ->
+  ~ same_side A C L ->
+  ~ same_side B C L ->
+  same_side A B L.
 
 
 End Flat.
