@@ -105,7 +105,7 @@ Proof.
     exists x. destruct H. apply between_rev in H0. split; assumption.
 Qed.
 
-(* Copied out the case here to make it more usable, proof is not that readable *)
+(* Copied out the case here to make it more usable, proof is not that readable since I didn't fix the hypotheses name *)
 Lemma same_side_transitive_case1 : forall (A B C : Point) (L : Line),
   (~exists L', LiesOnPL A L' /\ LiesOnPL B L' /\ LiesOnPL C L') ->
   distinct3 A B C ->
@@ -118,19 +118,19 @@ Lemma same_side_transitive_case1 : forall (A B C : Point) (L : Line),
 Proof.
   intros.
   destruct (excluded_middle (same_side A C L)).
-  * assumption.
-  * specialize (pasch A C B L MPlane) as Hpasch. 
+  - assumption.
+  - specialize (pasch A C B L MPlane) as Hpasch. 
     unfold same_side in H6. destruct H6. right. unfold not. intros.
     unfold distinct3 in *. assert (A <> C /\ C <> B /\ B <> A) as HD2. { intuition. } apply Hpasch in HD2; auto.
-    + destruct HD2.
-      -- unfold same_side in H5. destruct H5.
-        ** intuition.
-        ** apply H5. destruct H7. exists x. destruct H7. apply between_rev in H8. split; assumption.
-      -- unfold same_side in H4. destruct H4.
-        ** intuition.
-        ** apply H4. destruct H7. exists x. destruct H7. split; assumption.
-    + unfold not. intros. apply H. destruct H7. exists x. intuition.
-    + apply (mplane_line L). 
+    * destruct HD2.
+      + unfold same_side in H5. destruct H5.
+        -- intuition.
+        -- apply H5. destruct H7. exists x. destruct H7. apply between_rev in H8. split; assumption.
+      + unfold same_side in H4. destruct H4.
+        -- intuition.
+        -- apply H4. destruct H7. exists x. destruct H7. split; assumption.
+    * unfold not. intros. apply H. destruct H7. exists x. intuition.
+    * apply (mplane_line L). 
 Qed.
 
 Theorem same_side_transitive : forall (A B C : Point) (L : Line),
@@ -252,8 +252,45 @@ Proof.
   - apply (same_side_transitive_case1 A B C L); auto.
 Qed.
 
-(* Shows that there are only two equivalence classes for this relation, so line divides plane into two sides *)
-Theorem plane_separation : forall (A B C : Point) (L : Line),
+(* Shows that there are at least two equivalence classes for this relation *)
+Theorem plane_separation_at_least_two : forall (L : Line),
+  exists A B, ~LiesOnPL A L /\ ~LiesOnPL B L /\ ~same_side A B L.
+Proof.
+  intros.
+  specialize (three_points_not_on_line L) as HP.
+  destruct HP as [A [B [C [Hdistinct [HA [HB HC]]]]]].
+  clear HB HC Hdistinct B C.
+  specialize (two_points_on_line L) as HP.
+  destruct HP as [D [E [Hneq [HD HE]]]].
+  clear Hneq HE E.
+  specialize (exists_point_between_line A D) as Hb.
+  assert (A <> D).
+  {
+    specialize (points_not_equivalent D A L) as HDAneq.
+    apply HDAneq in HD; auto.
+  }
+  apply Hb in H. destruct H as [B HB].
+  exists A, B.
+  split.
+  - assumption.
+  - split.
+    * destruct (excluded_middle (LiesOnPL B L)).
+      + apply between_line in HB. destruct HB as [HL Hdistinct].
+        destruct HL as [L' [HAL' [HDL' HBL']]].
+        assert (L = L').
+        {
+          apply (equivalent_line D B L L'); auto.
+          - unfold distinct3 in Hdistinct. intuition.
+        }
+        subst. contradiction.
+      + assumption.
+    * unfold same_side. unfold not. intros. destruct H.
+      + apply between_line in HB. destruct HB as [HL Hdistinct]. unfold distinct3 in Hdistinct. intuition.
+      + apply H. exists D. split; auto.
+Qed.
+
+(* Shows that there are at most two equivalence classes for this relation *)
+Theorem plane_separation_only_two : forall (A B C : Point) (L : Line),
   ~ LiesOnPL A L ->
   ~ LiesOnPL B L ->
   ~ LiesOnPL C L ->
@@ -261,7 +298,11 @@ Theorem plane_separation : forall (A B C : Point) (L : Line),
   ~ same_side B C L ->
   same_side A B L.
 Proof.
+  intros A B C L HA HB HC HAC HBC.
   Admitted.
 
+(* Together the above two theorems show that there are only
+   two equivalence classes for this relation(for points not on the line)
+   and therefore the line separates the plane *)
 
 End Flat.

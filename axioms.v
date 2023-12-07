@@ -15,7 +15,7 @@ Parameter LiesOnLp : Line -> Plane -> Prop.
 Definition distinct3 (A B C : Point) : Prop :=
   A <> B /\ B <> C /\ C <> A.
 
-(* I will be using this to make my life easier *)
+(* I will be using this to make my life easier, would probably be better to only axiomatize _certain_ things as decidable *)
 Axiom excluded_middle : forall (P : Prop),
   P \/ ~P.
 
