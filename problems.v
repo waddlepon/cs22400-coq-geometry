@@ -208,7 +208,7 @@ Proof.
           - unfold distinct3 in HPABD. intuition.
         }
         subst. apply HNL. exists ABL. intuition.
-    * (* The point should be PAC, but showing betweeness(although it's obviously true given the fraudulet nature of this line), not sure how to formalize *)
+    * (* The point should be PAC, but showing betweeness(although it's obviously "true" given the fraudulet nature of this line), not sure how to formalize *)
       admit.
 Admitted.
      
@@ -583,5 +583,92 @@ Qed.
 (* Together the above two theorems show that there are only
    two equivalence classes for this relation(for points not on the line)
    and therefore the line separates the plane *)
+
+
+(* Proving side angle side theorem for triangle congruence *)
+Theorem side_angle_side : forall (A B C D E F : Point),
+  distinct3 A B C -> (~ exists L, LiesOnPL A L /\ LiesOnPL B L /\ LiesOnPL C L) ->
+  distinct3 D E F -> (~ exists L, LiesOnPL D L /\ LiesOnPL E L /\ LiesOnPL F L) ->
+  CongruentLS A B D E ->
+  CongruentLS A C D F ->
+  CongruentA B A C E D F ->
+  CongruentLS B C E F /\ CongruentA A B C D E F /\ CongruentA A C B D F E.
+Proof.
+  intros A B C D E F HABCD HABCNL HDEFD HDEFNL HABcDE HACcDF HBACcEDF.
+  assert (CongruentA A B C D E F).
+  {
+    apply (congruent_angles_of_triangles); auto.
+  }
+  assert (CongruentA A C B D F E).
+  {
+    apply (congruent_angles_of_triangles); auto.
+    - unfold distinct3 in *. intuition.
+    - unfold not. intros. apply HABCNL. destruct H0. exists x. intuition.
+    - unfold distinct3 in *. intuition.
+    - unfold not. intros. apply HDEFNL. destruct H0. exists x. intuition.
+    - apply (congruenta_trans B A C C A B F D E).
+      * apply congruenta_flip.
+      * apply (congruenta_trans E D F B A C F D E).
+        + apply congruenta_equiv. assumption.
+        + apply congruenta_flip.
+  }
+  assert (CongruentLS B C E F).
+  {
+    specialize (exists_line E F) as HEF.
+    assert (E <> F).
+    {
+      unfold distinct3 in HDEFD. intuition.
+    }
+    apply HEF in H1. clear HEF. destruct H1 as [EF HEF].
+    specialize (exists_congruent_line_segment B C E F EF) as HCL.
+    assert (B <> C). { unfold distinct3 in HABCD. intuition. }
+    apply HCL in H1; auto.
+    - destruct H1 as [G [HLG [HLSBCEG HGor]]].
+      assert (CongruentA B A C E D G).
+      {
+        apply congruent_angles_of_triangles; auto.
+        - unfold distinct3 in *. intuition.
+        - unfold not. intros. apply HABCNL. destruct H1. exists x. intuition.
+        - unfold distinct3 in *. split.
+          * intuition.
+          * split.
+            + unfold not. intros. subst. apply HDEFNL. exists EF. intuition.
+            + destruct HGor.
+              { apply between_line in H1. unfold distinct3 in H1. intuition. }
+              { 
+                destruct H1.
+                - apply between_line in H1. unfold distinct3 in H1. intuition.
+                - subst. intuition.
+              }
+        - unfold not. intros. destruct HGor.
+          * apply between_line in H2. destruct H2.  destruct H2. destruct H1. 
+            assert (x = x0).
+            {
+              apply (equivalent_line E G x x0); try intuition.
+              - subst. unfold distinct3 in *. intuition.
+            }
+            subst. apply HDEFNL. exists x0. intuition.
+          * destruct H2.
+            + apply between_line in H2. destruct H2.  destruct H2. destruct H1. 
+              assert (x = x0).
+              {
+                apply (equivalent_line E G x x0); try intuition.
+                - subst. unfold distinct3 in *. intuition.
+              }
+              subst. apply HDEFNL. exists x0. intuition. 
+            + subst. apply HDEFNL. destruct H1. exists x. intuition.
+        - apply (congruentls_trans A B B A E D).
+          * apply congruentls_flip.
+          * apply (congruentls_trans D E A B E D).
+            + apply congruentls_equiv. assumption.
+            + apply congruentls_flip.
+        - admit. (* not sure how to do this, even though it's obvious since G and F on the same line, tried to use Axiom III4 but couldn't get it to work *)
+      } admit.
+    - intuition.
+    - unfold distinct3 in *. intuition.
+    - intuition.
+  }
+  split; auto.
+Admitted.
 
 End Flat.

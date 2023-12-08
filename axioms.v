@@ -109,6 +109,9 @@ Axiom congruentls_refl : forall (A B : Point),
 Axiom congruentls_equiv : forall (A B A' B' : Point),
   CongruentLS A B A' B' -> CongruentLS A' B' A B.
 
+Axiom congruentls_flip : forall (A B : Point),
+  CongruentLS A B B A.
+
 (* III2 *)
 Axiom congruentls_trans : forall (A B A' B' A'' B'' : Point),
   CongruentLS A B A' B' -> CongruentLS A B A'' B'' -> CongruentLS A' B' A'' B''.
@@ -160,14 +163,14 @@ Definition interior_points_same_side (A Origin C : Point) : Prop :=
 .
 
 (* TODO: is exists! enough for uniqueness or should I add another axiom? *)
-(* Kind of weird, but basically Side is a point on the side of the line A-Origin that we want our angle to be on *)
+(* Kind of weird, but basically Side is a point on the side of the line H-Origin that we want our angle to be on *)
 Axiom exists_congruent_angle : forall (A B C Origin H Side : Point) (p : Plane),
   distinct3 A B C ->
   (* Can't be a 180 angle, otherwise sides don't work *)
   (~ exists L, LiesOnPL A L /\ LiesOnPL B L /\ LiesOnPL C L) ->
   Origin <> H ->
   LiesOnPp A p -> LiesOnPp B p -> LiesOnPp C p -> LiesOnPp Origin p -> LiesOnPp H p ->
-  exists! K, CongruentA A B C H Origin K /\ LiesOnPp K p /\ (forall AO, LiesOnPL A AO /\ LiesOnPL Origin AO -> (~ exists M, Between K M Side /\ LiesOnPL M AO)) /\ interior_points_same_side H Origin C.
+  exists! K, CongruentA A B C H Origin K /\ LiesOnPp K p /\ (forall AO, LiesOnPL A AO /\ LiesOnPL Origin AO -> (~ exists M, Between K M Side /\ LiesOnPL M AO)) /\ interior_points_same_side H Origin K.
   
 (* III6 *)
 Axiom congruent_angles_of_triangles : forall (A B C A' B' C' : Point),
